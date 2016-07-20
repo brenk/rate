@@ -120,14 +120,6 @@ function rate_theme() {
       'pattern' => 'rate_button__',
       'variables' => array('text' => NULL, 'href' => NULL, 'class' => NULL),
     ),
-    'rate_admin_types' => array(
-      'render element' => 'element',
-      'file' => 'rate.admin.inc',
-    ),
-    'rate_admin_options' => array(
-      'render element' => 'element',
-      'file' => 'rate.admin.inc',
-    ),
     // Templates for default widget types.
     'rate_template_thumbs_up' => array(
       'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),

@@ -145,28 +145,28 @@ class VoteController extends ControllerBase implements ContainerInjectionInterfa
     $ip = \Drupal::request()->getClientIp();
     $agent = $_SERVER['HTTP_USER_AGENT'];
 
-    if (botsIsLocal($ip)) {
+    if ($this->botsIsLocal($ip)) {
       // The IP-address is a local IP-address. This is probably because of
       // misconfigured proxy servers. Do only the user agent check.
-      return botsCheckAgent($agent);
+      return $this->botsCheckAgent($agent);
     }
 
-    if (botsCheckIp($ip)) {
+    if ($this->botsCheckIp($ip)) {
       return TRUE;
     }
 
-    if (botsCheckAgent($agent)) {
+    if ($this->botsCheckAgent($agent)) {
       // Identified as a bot by its user agent. Register this bot by IP-address
       // as well, in case this bots uses multiple agent strings.
-      botsRegisterBot($ip);
+      $this->botsRegisterBot($ip);
       return TRUE;
     }
 
     $config = \Drupal::config('rate.settings');
     $threshold = $config->get('bot_minute_threshold', 25);
 
-    if ($threshold && (botsCheckThreshold($ip, 60) > $threshold)) {
-      botsRegisterBot($ip);
+    if ($threshold && ($this->botsCheckThreshold($ip, 60) > $threshold)) {
+      $this->botsRegisterBot($ip);
       return TRUE;
     }
 
@@ -174,14 +174,14 @@ class VoteController extends ControllerBase implements ContainerInjectionInterfa
 
     // Always count, even if threshold is disabled. This is to determine if we
     // can skip the BotScout check.
-    $count = botsCheckThreshold($ip, 3600);
+    $count = $this->botsCheckThreshold($ip, 3600);
     if ($threshold && ($count > $threshold)) {
-      botsRegisterBot($ip);
+      $this->botsRegisterBot($ip);
       return TRUE;
     }
 
-    if (!$count && botsCheckBotscout($ip)) {
-      botsRegisterBot($ip);
+    if (!$count && $this->botsCheckBotscout($ip)) {
+      $this->botsRegisterBot($ip);
       return TRUE;
     }
 
@@ -204,7 +204,7 @@ class VoteController extends ControllerBase implements ContainerInjectionInterfa
    *   Redirect to path provided in request.
    */
   public function vote($entity_type_id, $vote_type_id, $entity_id, Request $request) {
-    $is_bot_vote = botsIsBot();
+    $is_bot_vote = $this->botsIsBot();
     if (!$is_bot_vote) {
       $vote_storage = \Drupal::entityTypeManager()->getStorage('vote');
       $user_votes = $vote_storage->getUserVotes(
