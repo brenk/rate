@@ -1,0 +1,5 @@
+rate.admin_settings:
+  title: Rate settings
+  description: 'Management options for the Rate module.'
+  route_name: rate.admin_settings
+  parent: votingapi.admin_settings

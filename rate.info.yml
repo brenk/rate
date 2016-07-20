@@ -1,0 +1,11 @@
+name: Rate
+description: 'Flexible voting options for nodes and comments'
+core: 8.x
+package: Voting
+dependencies:
+  - votingapi
+project: rate
+type: module
+configure: rate.admin_settings
+version: '8.x-1.0-alpha1'
+core: '8.x'

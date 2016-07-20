@@ -1,0 +1,6 @@
+view rate results page:
+  title: 'View rate results page'
+  description: 'View rate results page'
+administer rate:
+  title: 'Administer Rate options'
+  description: 'Manage administrative options of the rate module.'
