@@ -1,3 +1,10 @@
+D8 Update
+---------
+Will track progress of D8 port in this section. Currently, simple like/dislike
+voting should work (takne from https://www.drupal.org/project/like_and_dislike)
+and bot prevention stuff should work, though not that isn't tested.
+
+Readme from D7:
 
 PREFACE
 -------
