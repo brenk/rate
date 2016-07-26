@@ -1,0 +1,26 @@
+{#
+/**
+ * @file
+ * Default theme implementation for up/down voting display.
+ *
+ * Available variables:
+ * - up_button: button to vote up.
+ * - down_button: button to vote down.
+ * - score_class: extra class to distinguish score level.
+ * - info: short text to display.
+ * - description: longer descriptive info to display.
+ *
+ * @ingroup themeable
+ */
+#}
+{{ up_button }}
+<div class="rate-number-up-down-rating {{ score_class }}">
+  {{ score }}
+</div>
+{{ down_button }}
+{% if info %}
+  <div class="rate-info">{{ info }}</div>
+{% endif %}
+{% if description %}
+  <div class="rate-description">{{ description }}</div>
+{% endif %}

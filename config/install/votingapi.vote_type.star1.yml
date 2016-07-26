@@ -1,0 +1,4 @@
+id: star1
+label: 'One star'
+value_type: 'points'
+description: 'Fivestar voting - 1 star.'

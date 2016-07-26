@@ -1,0 +1,4 @@
+id: down
+label: 'Dislike/Down/No vote'
+value_type: 'points'
+description: 'A negative vote.'

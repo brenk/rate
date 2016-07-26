@@ -1,0 +1,25 @@
+fivestar:
+  version: 1.0
+  css:
+    theme:
+      css/fivestar.css: {}
+number-up-down:
+  version: 1.0
+  css:
+    theme:
+      css/number-up-down.css: {}
+thumbs-up:
+  version: 1.0
+  css:
+    theme:
+      css/thumbs-up.css: {}
+thumbs-up-down:
+  version: 1.0
+  css:
+    theme:
+      css/thumbs-up-down.css: {}
+yesno:
+  version: 1.0
+  css:
+    theme:
+      css/yesno.css: {}
