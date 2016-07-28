@@ -2,9 +2,10 @@ rate.results_page:
   route_name: rate.results_page
   title: 'Voting results'
   weight: 10
-like_and_dislike.admin_settings:
-  title: Rate settings
-  description: 'Management options Rate.'
+  base_route: entity.node.canonical
+rate.admin_settings:
+  title: 'Rate settings'
+  description: 'Management options for Rate module.'
   route_name: rate.admin_settings
   weight: 30
   base_route: votingapi.admin_settings

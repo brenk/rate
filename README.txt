@@ -1,8 +1,31 @@
 D8 Update
 ---------
-Will track progress of D8 port in this section. Currently, simple like/dislike
-voting should work (takne from https://www.drupal.org/project/like_and_dislike)
-and bot prevention stuff should work, though not that isn't tested.
+Will track progress of D8 port in this section. Note that not everything has
+been fully tested.
+
+Implemented
+ - Up/down (number up/down, thumbs up/down, yes/no) voting
+ - Fivestar voting
+ - CSS and templates
+ - Voting Results tab for nodes
+
+Not implemented yet:
+ - AJAX voting
+ - Emotion voting (do not plan on porting)
+ - Configurable Intro, description, already voted text/unlinking
+ - Full array of configuration from rate d7
+ - Different widget display types
+ - Placement on node
+ - Full configuration options from D7
+ - Voting for comments
+
+Limitations:
+ - Only one voting type per entity (node) type
+ - No migration if you want to switch from one widget type to another after
+
+Known Issues:
+ - Anonymous voter being treated as a singular entity; can't vote more than once
+ - Recurrsion warning for results totals
 
 Readme from D7:
 

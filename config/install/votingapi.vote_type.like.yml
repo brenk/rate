@@ -1,4 +1,0 @@
-id: like
-label: 'Like vote'
-value_type: 'points'
-description: 'A like vote, for positive reviews.'

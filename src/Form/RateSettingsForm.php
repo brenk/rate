@@ -1,18 +1,15 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\rate\Form\RateSettingsForm.
- */
-
 namespace Drupal\rate\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Render\Element;
 use Drupal\comment\Entity\CommentType;
 use Drupal\node\Entity\NodeType;
 
+/**
+ * Configure rate settings for the site.
+ */
 class RateSettingsForm extends ConfigFormBase {
 
   /**
@@ -32,8 +29,23 @@ class RateSettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, \Drupal\Core\Form\FormStateInterface $form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config('rate.settings');
+
+    $widget_type_options = [
+      "fivestar" => "Fivestar",
+      "number_up_down" => "Number Up / Down",
+      "thumbs_up" => "Thumbs Up",
+      "thumbs_up_down" => "Thumbs Up / Down",
+      "yesno" => "Yes / No",
+    ];
+
+    $form['widget_type'] = [
+      '#type' => 'select',
+      '#title' => t('Widget Type'),
+      '#options' => $widget_type_options,
+      '#default_value' => $config->get('widget_type', 'number_up_down'),
+    ];
 
     $form['bot'] = [
       '#type' => 'fieldset',
@@ -43,7 +55,7 @@ class RateSettingsForm extends ConfigFormBase {
       '#collapsed' => FALSE,
     ];
 
-    $options = array_combine([0, 10, 25, 50, 100, 250, 500, 1000], [
+    $threshold_options = array_combine([0, 10, 25, 50, 100, 250, 500, 1000], [
       0,
       10,
       25,
@@ -53,53 +65,53 @@ class RateSettingsForm extends ConfigFormBase {
       500,
       1000,
     ]);
-    $options[0] = t('disable');
+    $threshold_options[0] = t('disable');
 
-    $form['bot']['bot_minute_threshold'] = array(
-     '#type' => 'select',
-     '#title' => t('1 minute threshold'),
-     '#options' => $options,
-     '#default_value' => $config->get('bot_minute_threshold', 25),
-    );
+    $form['bot']['bot_minute_threshold'] = [
+      '#type' => 'select',
+      '#title' => t('1 minute threshold'),
+      '#options' => $threshold_options,
+      '#default_value' => $config->get('bot_minute_threshold', 25),
+    ];
 
-    $form['bot']['bot_hour_threshold'] = array(
+    $form['bot']['bot_hour_threshold'] = [
       '#type' => 'select',
       '#title' => t('1 hour threshold'),
-      '#options' => $options,
+      '#options' => $threshold_options,
       '#default_value' => $config->get('bot_hour_threshold', 250),
-    );
+    ];
 
-    $form['bot']['botscout_key'] = array(
+    $form['bot']['botscout_key'] = [
       '#type' => 'textfield',
       '#title' => t('BotScout.com API key'),
       '#default_value' => $config->get('botscout_key', ''),
-      '#description' => t('Rate will check the voters IP against the BotScout database if it has an API key. You can request a key at %url.', array('%url' => 'http://botscout.com/getkey.htm')),
-    );
+      '#description' => t('Rate will check the voters IP against the BotScout database if it has an API key. You can request a key at %url.', ['%url' => 'http://botscout.com/getkey.htm']),
+    ];
 
-    $form['rate_types_enabled'] = array(
+    $form['rate_types_enabled'] = [
       '#type' => 'fieldset',
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
       '#title' => t('Entity types with Rate widgets enabled:'),
       '#description' => t('If you disable any type here, already existing data will remain untouched.'),
-    );
+    ];
 
     foreach (NodeType::loadMultiple() as $type) {
       $id = 'node_' . $type->id() . '_available';
-      $form['vote_types_enabled'][$id] = array(
+      $form['rate_types_enabled']['vote_types_enabled'][$id] = [
         '#type' => 'checkbox',
         '#title' => $type->label(),
         '#default_value' => $config->get($id, 0),
-      );
+      ];
     }
     if (\Drupal::moduleHandler()->moduleExists('comment')) {
       foreach (CommentType::loadMultiple() as $type) {
         $id = 'comment_' . $type->id() . '_available';
-        $form['vote_types_enabled'][$id] = array(
+        $form['rate_types_enabled']['vote_types_enabled'][$id] = [
           '#type' => 'checkbox',
           '#title' => $type->label(),
           '#default_value' => $config->get($id, 0),
-        );
+        ];
       }
     }
 
@@ -109,11 +121,11 @@ class RateSettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, \Drupal\Core\Form\FormStateInterface $form_state) {
+  public function validateForm(array &$form, FormStateInterface $form_state) {
     if ($form_state->getValue(['botscout_key'])) {
       $uri = "http://botscout.com/test/?ip=84.16.230.111&key=" . $form_state->getValue(['botscout_key']);
       try {
-        $response = \Drupal::httpClient()->get($uri, array('headers' => array('Accept' => 'text/plain')));
+        $response = \Drupal::httpClient()->get($uri, ['headers' => ['Accept' => 'text/plain']]);
         $data = (string) $response->getBody();
         $status_code = $response->getStatusCode();
         if (empty($data)) {
@@ -156,11 +168,13 @@ class RateSettingsForm extends ConfigFormBase {
       }
     }
 
-    $config->set('bot_minute_threshold', $form_state->getValue('bot_minute_threshold'))
+    $config->set('widget_type', $form_state->getValue('widget_type'))
+      ->set('bot_minute_threshold', $form_state->getValue('bot_minute_threshold'))
       ->set('bot_hour_threshold', $form_state->getValue('bot_hour_threshold'))
       ->set('botscout_key', $form_state->getValue('botscout_key'))
       ->save();
 
     parent::submitForm($form, $form_state);
   }
+
 }

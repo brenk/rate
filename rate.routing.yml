@@ -12,3 +12,10 @@ rate.vote:
     _controller: '\Drupal\rate\Controller\VoteController::vote'
   requirements:
     _permission: 'access content'
+rate.results_page:
+  path: '/node/{node}/rating'
+  defaults:
+    _title: 'Rate Voting results'
+    _controller: '\Drupal\rate\Controller\ResultsController::results'
+  requirements:
+    _permission: 'view rate results page'
