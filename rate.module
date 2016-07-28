@@ -8,6 +8,10 @@
 use \Drupal\Core\Entity\EntityInterface;
 use \Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use \Drupal\Core\Url;
+use Drupal\Core\Link;
+
+// @Todo: implement permissions/has voted.
+// @Todo add closed and extra info.
 
 /**
  * Implements hook_entity_load().
@@ -19,14 +23,24 @@ function rate_entity_load(array $entities, $entity_type_id) {
   foreach ($entities as $entity) {
     $config_id = $entity->getEntityTypeId() . '_' . $entity->bundle() . '_available';
     if ($config->get($config_id, FALSE)) {
-      $like = $vote_result_storage->getEntityResults(
-        $entity_type_id, $entity->id(), 'like', 'vote_count'
-      );
-      $entity->like = !empty($like) ? current($like)->getValue() : 0;
-      $dislike = $vote_result_storage->getEntityResults(
-        $entity_type_id, $entity->id(), 'dislike', 'vote_count'
-      );
-      $entity->dislike = !empty($dislike) ? current($dislike)->getValue() : 0;
+      if ($config->get('widget_type') == 'fivestar') {
+        for ($counter = 1; $counter < 6; $counter++) {
+          $star = $vote_result_storage->getEntityResults(
+            $entity_type_id, $entity->id(), 'star' . $counter, 'vote_count'
+          );
+          $entity->{'star' . $counter} = !empty($star) ? current($star)->getValue() : 0;
+        }
+      }
+      else {
+        $up = $vote_result_storage->getEntityResults(
+          $entity_type_id, $entity->id(), 'up', 'vote_count'
+        );
+        $entity->up = !empty($up) ? current($up)->getValue() : 0;
+        $down = $vote_result_storage->getEntityResults(
+          $entity_type_id, $entity->id(), 'down', 'vote_count'
+        );
+        $entity->down = !empty($down) ? current($down)->getValue() : 0;
+      }
     }
   }
 }
@@ -39,147 +53,292 @@ function rate_entity_view(array &$build, EntityInterface $entity, EntityViewDisp
   $enabled_view_modes = ['full'];
   $config_id = $entity->getEntityTypeId() . '_' . $entity->bundle() . '_available';
 
-  // $entity_type_ids_available_to_vote = \Drupal\like_and_dislike\LikeDislikePermissions::getEntityTypesAvailableToVote();
-
-  $account = \Drupal::currentUser();
+  $widget_type = $config->get('widget_type', 'number_up_down');
+  $rate_theme = 'rate_template_' . $widget_type;
 
   if ($config->get($config_id, FALSE) && in_array($view_mode, $enabled_view_modes)) {
     $entity_type_id = $entity->getEntityTypeId();
-    $links = [];
-    if (TRUE) {
-      $like_item = \Drupal\Core\Link::fromTextAndUrl(
-        $entity->like . ' Like',
-        Url::fromRoute('rate.vote', [
-          'entity_type_id' => $entity->getEntityTypeId(),
-          'vote_type_id' => 'like',
-          'entity_id' => $entity->id(),
-          'destination' => drupal_get_destination()['destination']
-        ])
-      );
-    }
-    else {
-      $like_item = $entity->like . ' Like';
-    }
-    $links['like'] = $like_item;
-    if ($account->hasPermission("add or remove like votes on $entity_type_id")) {
-      $dislike_item = \Drupal\Core\Link::fromTextAndUrl(
-        $entity->dislike . ' Dislike',
-        Url::fromRoute('rate.vote', [
-          'entity_type_id' => $entity->getEntityTypeId(),
-          'vote_type_id' => 'dislike',
-          'entity_id' => $entity->id(),
-          'destination' => drupal_get_destination()['destination']
-        ])
-      );
-    }
-    else {
-      $dislike_item = $entity->dislike . ' Dislike';
-    }
-    $links['dislike'] = $dislike_item;
 
-    $build['votingapi_links'] = array(
-      '#theme' => 'item_list__votingapi',
-      '#items' => $links,
-      '#attributes' => array('class' => array('links', 'inline')),
-    );
+    if ($config->get('widget_type') == 'fivestar') {
+      $build['votingapi_links'] = [
+        '#theme' => $rate_theme,
+        '#star1_votes' => $entity->star1,
+        '#star2_votes' => $entity->star2,
+        '#star3_votes' => $entity->star3,
+        '#star4_votes' => $entity->star4,
+        '#star5_votes' => $entity->star5,
+        '#entity_id' => $entity->id(),
+        '#entity_type_id' => $entity->getEntityTypeId(),
+        '#attributes' => ['class' => ['links', 'inline']],
+      ];
+    }
+    else {
+      $build['votingapi_links'] = [
+        '#theme' => $rate_theme,
+        '#up_votes' => $entity->up,
+        '#down_votes' => $entity->down,
+        '#entity_id' => $entity->id(),
+        '#entity_type_id' => $entity->getEntityTypeId(),
+        '#attributes' => ['class' => ['links', 'inline']],
+      ];
+    }
   }
 }
 
 /**
+ * Record a vote to the database.
  *
+ * @param EntityInterface $vote
+ *   Vote entity to record.
  */
 function rate_vote_insert(EntityInterface $vote) {
   switch ($vote->bundle()) {
-    case 'like':
-      $vote_type_to_delete = 'dislike';
+    case 'up':
+      $vote_type_to_delete = 'up';
       break;
-    case 'dislike':
-      $vote_type_to_delete = 'like';
+
+    case 'down':
+      $vote_type_to_delete = 'down';
       break;
   }
-  $vote_storage = \Drupal::entityTypeManager()->getStorage('vote');
-  $vote_storage->deleteUserVotes(
-    $vote->getOwnerId(),
-    $vote_type_to_delete,
-    $vote->getVotedEntityType(),
-    $vote->getVotedEntityId()
-  );
 }
 
 /**
  * Implements hook_theme().
  */
-function rate_theme() {
+function rate_theme($existing, $type, $theme, $path) {
   return array(
-    'rate_widget' => array(
-      'pattern' => 'rate_widget__',
-      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
-      'template' => 'rate-widget',
-    ),
-    'rate_button' => array(
-      'pattern' => 'rate_button__',
-      'variables' => array('text' => NULL, 'href' => NULL, 'class' => NULL),
-    ),
     // Templates for default widget types.
     'rate_template_thumbs_up' => array(
-      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
+      'variables' => [
+        'up_votes' => 0,
+        'entity_id' => NULL,
+        'entity_type_id' => NULL,
+      ],
       'template' => 'rate-template-thumbs-up',
-      'path' => drupal_get_path('module', 'rate') . '/templates/thumbs-up',
     ),
     'rate_template_thumbs_up_down' => array(
-      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
+      'variables' => [
+        'up_votes' => 0,
+        'down_votes' => 0,
+        'entity_id' => NULL,
+        'entity_type_id' => NULL,
+      ],
       'template' => 'rate-template-thumbs-up-down',
-      'path' => drupal_get_path('module', 'rate') . '/templates/thumbs-up-down',
     ),
-    'rate_template_number_up_down' => array(
-      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
+    'rate_template_number_up_down' => [
+      'variables' => [
+        'up_votes' => 0,
+        'down_votes' => 0,
+        'entity_id' => NULL,
+        'entity_type_id' => NULL,
+      ],
       'template' => 'rate-template-number-up-down',
-      'path' => drupal_get_path('module', 'rate') . '/templates/number-up-down',
-    ),
+    ],
     'rate_template_fivestar' => array(
-      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
+      'variables' => [
+        'star1_votes' => 0,
+        'star2_votes' => 0,
+        'star3_votes' => 0,
+        'star4_votes' => 0,
+        'star5_votes' => 0,
+        'entity_id' => NULL,
+        'entity_type_id' => NULL,
+      ],
       'template' => 'rate-template-fivestar',
-      'path' => drupal_get_path('module', 'rate') . '/templates/fivestar',
-    ),
-    'rate_template_emotion' => array(
-      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
-      'template' => 'rate-template-emotion',
-      'path' => drupal_get_path('module', 'rate') . '/templates/emotion',
     ),
     'rate_template_yesno' => array(
-      'variables' => array('links' => NULL, 'results' => NULL, 'mode' => NULL, 'just_voted' => FALSE, 'content_type' => NULL, 'content_id' => NULL, 'display_options' => NULL),
+      'variables' => [
+        'up_votes' => 0,
+        'down_votes' => 0,
+        'entity_id' => NULL,
+        'entity_type_id' => NULL,
+      ],
       'template' => 'rate-template-yesno',
-      'path' => drupal_get_path('module', 'rate') . '/templates/yesno',
     ),
   );
 }
 
 /**
- * Theme rate button.
- *
- * @param array $variables
- * @return string
+ * Implements hook_preprocess_HOOK() for rate-template-number-up-down.html.twig.
  */
-function theme_rate_button($variables) {
-  $text = $variables['text'];
-  $href = $variables['href'];
-  $class = $variables['class'];
-  static $id = 0;
-  $id++;
+function template_preprocess_rate_template_number_up_down(&$variables) {
+  $up_item = Link::fromTextAndUrl(
+    'Up',
+    Url::fromRoute('rate.vote', [
+      'entity_type_id' => $variables['entity_type_id'],
+      'vote_type_id' => 'up',
+      'entity_id' => $variables['entity_id'],
+      'destination' => drupal_get_destination()['destination'],
+    ], [
+      'attributes' => ['class' => 'rate-number-up-down-btn-up'],
+    ])
+  );
+  $variables['up_button'] = $up_item;
 
-  $classes = 'rate-button';
-  if ($class) {
-    $classes .= ' ' . $class;
+  $down_item = Link::fromTextAndUrl(
+    'Down',
+    Url::fromRoute('rate.vote', [
+      'entity_type_id' => $variables['entity_type_id'],
+      'vote_type_id' => 'down',
+      'entity_id' => $variables['entity_id'],
+      'destination' => drupal_get_destination()['destination'],
+    ], [
+      'attributes' => ['class' => 'rate-number-up-down-btn-down'],
+    ])
+  );
+  $variables['down_button'] = $down_item;
+
+  $score = $variables['up_votes'] - $variables['down_votes'];
+  if ($score > 0) {
+    $score = '+' . $score;
+    $score_class = 'positive';
   }
-  if (empty($href)) {
-    // Widget is disabled or closed.
-    return '<span class="' . $classes . '" id="rate-button-' . $id . '">' .
-      \Drupal\Component\Utility\Html::escape($text) .
-      '</span>';
+  elseif ($score < 0) {
+    $score = $score;
+    $score_class = 'negative';
   }
   else {
-    return '<a class="' . $classes . '" id="rate-button-' . $id . '" rel="nofollow" href="' . htmlentities($href) . '" title="' . \Drupal\Component\Utility\Html::escape($text) . '">' .
-      \Drupal\Component\Utility\Html::escape($text) .
-      '</a>';
+    $score_class = 'neutral';
   }
+  $variables['score'] = $score;
+  $variables['score_class'] = $score_class;
+
+  // @Todo add closed and extra info.
+
+  $variables['#attached']['library'][] = 'rate/number-up-down';
+}
+
+/**
+ * Implements hook_preprocess_HOOK() for rate-template-fivestar.html.twig.
+ */
+function template_preprocess_rate_template_fivestar(&$variables) {
+  $stars = [];
+  // Calculate the score.
+  $score = 0;
+  $total_votes = 0;
+  for ($counter = 1; $counter < 6; $counter++) {
+    $score += ($variables['star' . $counter . '_votes'] * $counter);
+    $total_votes += $variables['star' . $counter . '_votes'];
+  }
+  $score = round($score / $total_votes);
+
+  // Set up the links.
+  for ($counter = 1; $counter < 6; $counter++) {
+    if ($counter <= $score) {
+      $class = 'rate-fivestar-btn-filled';
+    }
+    else {
+      $class = 'rate-fivestar-btn-empty';
+    }
+    $class .= ' rate-fivestar-' . ($counter + 1);
+    $stars[] = Link::fromTextAndUrl(
+      'Stars ' . $counter,
+      Url::fromRoute('rate.vote', [
+        'entity_type_id' => $variables['entity_type_id'],
+        'vote_type_id' => 'star' . $counter,
+        'entity_id' => $variables['entity_id'],
+        'destination' => drupal_get_destination()['destination'],
+      ], [
+        'attributes' => ['class' => $class],
+      ])
+    );
+  }
+
+  $variables['stars'] = [
+    '#theme' => 'item_list',
+    '#items' => $stars,
+  ];
+
+  $variables['#attached']['library'][] = 'rate/fivestar';
+}
+
+/**
+ * Implements hook_preprocess_HOOK() for rate-template-thumbs_up_down.html.twig.
+ */
+function template_preprocess_rate_template_thumbs_up_down(&$variables) {
+  $up_item = Link::fromTextAndUrl(
+    'Up',
+    Url::fromRoute('rate.vote', [
+      'entity_type_id' => $variables['entity_type_id'],
+      'vote_type_id' => 'up',
+      'entity_id' => $variables['entity_id'],
+      'destination' => drupal_get_destination()['destination'],
+    ], [
+      'attributes' => ['class' => 'rate-thumbs-up-down-btn-up'],
+    ])
+  );
+  $variables['up_button'] = $up_item;
+
+  $down_item = Link::fromTextAndUrl(
+    'Down',
+    Url::fromRoute('rate.vote', [
+      'entity_type_id' => $variables['entity_type_id'],
+      'vote_type_id' => 'down',
+      'entity_id' => $variables['entity_id'],
+      'destination' => drupal_get_destination()['destination'],
+    ], [
+      'attributes' => ['class' => 'rate-thumbs-up-down-btn-down'],
+    ])
+  );
+  $variables['down_button'] = $down_item;
+
+  $total_votes = $variables['up_votes'] + $variables['down_votes'];
+  $variables['up_percent'] = round(($variables['up_votes'] / $total_votes) * 100);
+  $variables['down_percent'] = round(($variables['down_votes'] / $total_votes) * 100);
+  $variables['#attached']['library'][] = 'rate/thumbs-up-down';
+}
+
+/**
+ * Implements hook_preprocess_HOOK() for rate-template-thumbs_up.html.twig.
+ */
+function template_preprocess_rate_template_thumbs_up(&$variables) {
+  $up_item = Link::fromTextAndUrl(
+    'Up',
+    Url::fromRoute('rate.vote', [
+      'entity_type_id' => $variables['entity_type_id'],
+      'vote_type_id' => 'up',
+      'entity_id' => $variables['entity_id'],
+      'destination' => drupal_get_destination()['destination'],
+    ], [
+      'attributes' => ['class' => 'rate-thumbs-up-btn-up'],
+    ])
+  );
+  $variables['up_button'] = $up_item;
+  $variables['#attached']['library'][] = 'rate/thumbs-up';
+}
+
+/**
+ * Implements hook_preprocess_HOOK() for rate-template-yes_no.html.twig.
+ */
+function template_preprocess_rate_template_yesno(&$variables) {
+  $buttons = [];
+
+  $up_item = Link::fromTextAndUrl(
+    'Yes',
+    Url::fromRoute('rate.vote', [
+      'entity_type_id' => $variables['entity_type_id'],
+      'vote_type_id' => 'up',
+      'entity_id' => $variables['entity_id'],
+      'destination' => drupal_get_destination()['destination'],
+    ], [
+      'attributes' => ['class' => 'rate-yesno-btn rate-yes-btn'],
+    ])
+  );
+  $variables['yes_button'] = $up_item;
+
+  $down_item = Link::fromTextAndUrl(
+    'No',
+    Url::fromRoute('rate.vote', [
+      'entity_type_id' => $variables['entity_type_id'],
+      'vote_type_id' => 'down',
+      'entity_id' => $variables['entity_id'],
+      'destination' => drupal_get_destination()['destination'],
+    ], [
+      'attributes' => ['class' => 'rate-yesno-btn rate-no-btn'],
+    ])
+  );
+  $variables['no_button']= $down_item;
+
+  $variables['#attached']['library'][] = 'rate/yesno';
 }
