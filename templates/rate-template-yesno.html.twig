@@ -12,8 +12,19 @@
  * @ingroup themeable
  */
 #}
-<div{{ attributes }}>
-  {{ buttons }}
+<div class="rate-widget-yesno">
+  <div class="item-list">
+    <ul>
+      <li class="rate-yes-up">
+        {{ yes_button }}
+        <div class="rate-yesno-votes">{{ up_votes }}</div>
+      </li>
+      <li class="rate-yes-down">
+        {{ no_button }}
+        <div class="rate-yesno-votes">{{ down_votes }}</div>
+      </li>
+    </ul>
+  </div>
   {% if info %}
     <div class="rate-info">{{ info }}</div>
   {% endif %}

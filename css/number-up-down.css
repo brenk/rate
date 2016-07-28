@@ -26,19 +26,3 @@
   text-align: center;
   padding: 0 5px;
 }
-
-.rate-number-up-down-rating-up {
-  display: block;
-  float: left;
-  width: 45px;
-  text-align: right;
-  padding-top: 3px;
-}
-
-.rate-number-up-down-rating-down {
-  display: block;
-  float: left;
-  width: 45px;
-  text-align: left;
-  padding-top: 3px;
-}
