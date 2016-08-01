@@ -2,10 +2,15 @@ uuid: d6b5d6a9-a1e3-4159-a507-a351ed2add0e
 langcode: en
 status: true
 dependencies:
+  config:
+    - votingapi.vote_type.down
+    - votingapi.vote_type.up
   module:
     - node
     - user
     - votingapi
+_core:
+  default_config_hash: JOBwmpuRwpDozOFTkbs7WpFZJfvDLHs2IwXqaepdFcw
 id: rate_results
 label: 'Rate Voting Results'
 module: views
@@ -434,18 +439,7 @@ display:
           plugin_id: date
       title: 'Voting Results'
       header: {  }
-      footer:
-        view:
-          id: view
-          table: views
-          field: view
-          relationship: none
-          group_type: group
-          admin_label: ''
-          empty: false
-          view_to_insert: 'rate_results:totals_embed'
-          inherit_arguments: true
-          plugin_id: view
+      footer: {  }
       empty: {  }
       relationships:
         entity_id:
@@ -509,14 +503,14 @@ display:
         - url
         - user.permissions
       tags: {  }
-  results_page:
-    display_plugin: page
-    id: results_page
-    display_title: Page
+  results_block:
+    display_plugin: block
+    id: results_block
+    display_title: Block
     position: 1
     display_options:
       display_extenders: {  }
-      path: node/%/rating
+      block_description: 'Rate Voting Results'
     cache_metadata:
       max-age: 0
       contexts:
@@ -525,10 +519,10 @@ display:
         - url
         - user.permissions
       tags: {  }
-  totals_embed:
-    display_plugin: embed
-    id: totals_embed
-    display_title: Embed
+  summary_block:
+    display_plugin: block
+    id: summary_block
+    display_title: Block
     position: 2
     display_options:
       display_extenders: {  }
@@ -679,6 +673,7 @@ display:
           entity_field: value
           plugin_id: field
       group_by: true
+      block_description: 'Rate Voting Summary'
     cache_metadata:
       max-age: 0
       contexts:

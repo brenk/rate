@@ -3,20 +3,19 @@
 namespace Drupal\rate\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
-use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\node\NodeInterface;
 
 /**
  * Returns responses for Rate routes.
  */
-class ResultsController extends ControllerBase implements ContainerInjectionInterface {
+class ResultsController extends ControllerBase {
 
   /**
    * Display rate voting results views.
    */
   public function results(NodeInterface $node) {
-    // @Todo: do we need this?
-    // The view in the config folder is what is displayed.
+    $page[] = views_embed_view('rate_results', 'results_block', $node->id());
+    $page[] = views_embed_view('rate_results', 'summary_block', $node->id());
+    return $page;
   }
-
 }
