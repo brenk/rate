@@ -13,14 +13,16 @@
  * @ingroup themeable
  */
 #}
-{{ up_button }}
-<div class="rate-number-up-down-rating {{ score_class }}">
-  {{ score }}
+<div class="rate-widget-number-up-down">
+  {{ up_button }}
+  <div class="rate-number-up-down-rating {{ score_class }}">
+    {{ score }}
+  </div>
+  {{ down_button }}
+  {% if info %}
+    <div class="rate-info">{{ info }}</div>
+  {% endif %}
+  {% if description %}
+    <div class="rate-description">{{ description }}</div>
+  {% endif %}
 </div>
-{{ down_button }}
-{% if info %}
-  <div class="rate-info">{{ info }}</div>
-{% endif %}
-{% if description %}
-  <div class="rate-description">{{ description }}</div>
-{% endif %}
