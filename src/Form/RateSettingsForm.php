@@ -47,6 +47,13 @@ class RateSettingsForm extends ConfigFormBase {
       '#default_value' => $config->get('widget_type', 'number_up_down'),
     ];
 
+    $form['use_ajax'] = [
+      '#type' => 'checkbox',
+      '#title' => t('Use AJAX'),
+      '#default_value' => $config->get('use_ajax', FALSE),
+      '#description' => t('Record vote via AJAX.'),
+    ];
+
     $form['bot'] = [
       '#type' => 'fieldset',
       '#title' => t('Bot detection'),
@@ -172,6 +179,7 @@ class RateSettingsForm extends ConfigFormBase {
       ->set('bot_minute_threshold', $form_state->getValue('bot_minute_threshold'))
       ->set('bot_hour_threshold', $form_state->getValue('bot_hour_threshold'))
       ->set('botscout_key', $form_state->getValue('botscout_key'))
+      ->set('use_ajax', $form_state->getValue('use_ajax'))
       ->save();
 
     parent::submitForm($form, $form_state);

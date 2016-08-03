@@ -1,0 +1,3 @@
+services:
+  rate.entity_vote_totals:
+    class: Drupal\rate\RateEntityVoteTotals

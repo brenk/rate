@@ -18,4 +18,5 @@ class ResultsController extends ControllerBase {
     $page[] = views_embed_view('rate_results', 'summary_block', $node->id());
     return $page;
   }
+
 }
