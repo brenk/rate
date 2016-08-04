@@ -1,3 +1,6 @@
 services:
   rate.entity_vote_totals:
     class: Drupal\rate\RateEntityVoteTotals
+  rate.bot_detector:
+    class: Drupal\rate\RateBotDetector
+    arguments: ['@database']
