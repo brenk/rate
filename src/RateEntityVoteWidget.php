@@ -3,11 +3,12 @@
 namespace Drupal\rate;
 
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Session\AccountProxy;
 
 /**
  * The rate.entity_vote_totals service.
  */
-class RateEntityVoteTotals {
+class RateEntityVoteWidget {
 
   /**
    * The entity to get votes from.
@@ -17,13 +18,23 @@ class RateEntityVoteTotals {
   protected $entity;
 
   /**
+   * Current user.
+   *
+   * @var \Drupal\user\Entity\User
+   */
+  protected $user;
+
+  /**
    * Constructs a RateEntityVoteTotals object.
    *
    * @param \Drupal\Core\Entity\EntityInterface $entity
    *   The entity to get votes from.
+   * @param \Drupal\Core\Session\AccountProxy
+   *   The user who is voting.
    */
-  public function __construct(EntityInterface $entity) {
+  public function __construct(EntityInterface $entity, AccountProxy $user) {
     $this->entity = $entity;
+    $this->user = $user;
   }
 
   /**
@@ -44,6 +55,7 @@ class RateEntityVoteTotals {
       $entity_id = $this->entity->id();
       $entity_type_id = $this->entity->getEntityTypeId();
       $use_ajax = $config->get('use_ajax', FALSE);
+      $user_can_vote = $this->user->hasPermission('cast rate vote');
 
       if ($config->get('widget_type') == 'fivestar') {
         $output['votingapi_links'] = [
@@ -54,6 +66,7 @@ class RateEntityVoteTotals {
           '#star4_votes' => $this->entity->star4,
           '#star5_votes' => $this->entity->star5,
           '#use_ajax' => $use_ajax,
+          '#can_vote' => $user_can_vote,
           '#entity_id' => $entity_id,
           '#entity_type_id' => $entity_type_id,
           '#attributes' => ['class' => ['links', 'inline']],
@@ -65,6 +78,7 @@ class RateEntityVoteTotals {
           '#up_votes' => $this->entity->up,
           '#down_votes' => $this->entity->down,
           '#use_ajax' => $use_ajax,
+          '#can_vote' => $user_can_vote,
           '#entity_id' => $entity_id,
           '#entity_type_id' => $entity_type_id,
           '#attributes' => ['class' => ['links', 'inline']],

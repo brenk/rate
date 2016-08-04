@@ -9,9 +9,9 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Url;
 use Drupal\Core\Link;
-use Drupal\rate\RateEntityVoteTotals;
+use Drupal\rate\RateEntityVoteWidget;
 
-// @Todo: implement permissions/has voted.
+// @Todo: implement has voted.
 // @Todo add closed and extra info.
 
 /**
@@ -50,7 +50,8 @@ function rate_entity_load(array $entities, $entity_type_id) {
  * Implements hook_entity_view().
  */
 function rate_entity_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
-  $rate_totals = new RateEntityVoteTotals($entity);
+  $current_user = \Drupal::currentUser();
+  $rate_totals = new RateEntityVoteWidget($entity, $current_user);
   $rate_totals_output = $rate_totals->getEntityVoteTotals();
   $build = array_merge($build, $rate_totals_output);
 }
@@ -65,6 +66,7 @@ function rate_theme($existing, $type, $theme, $path) {
       'variables' => [
         'up_votes' => 0,
         'use_ajax' => FALSE,
+        'can_vote' => FALSE,
         'entity_id' => NULL,
         'entity_type_id' => NULL,
       ],
@@ -75,6 +77,7 @@ function rate_theme($existing, $type, $theme, $path) {
         'up_votes' => 0,
         'down_votes' => 0,
         'use_ajax' => FALSE,
+        'can_vote' => FALSE,
         'entity_id' => NULL,
         'entity_type_id' => NULL,
       ],
@@ -85,6 +88,7 @@ function rate_theme($existing, $type, $theme, $path) {
         'up_votes' => 0,
         'down_votes' => 0,
         'use_ajax' => FALSE,
+        'can_vote' => FALSE,
         'entity_id' => NULL,
         'entity_type_id' => NULL,
       ],
@@ -98,6 +102,7 @@ function rate_theme($existing, $type, $theme, $path) {
         'star4_votes' => 0,
         'star5_votes' => 0,
         'use_ajax' => FALSE,
+        'can_vote' => FALSE,
         'entity_id' => NULL,
         'entity_type_id' => NULL,
       ],
@@ -108,6 +113,7 @@ function rate_theme($existing, $type, $theme, $path) {
         'up_votes' => 0,
         'down_votes' => 0,
         'use_ajax' => FALSE,
+        'can_vote' => FALSE,
         'entity_id' => NULL,
         'entity_type_id' => NULL,
       ],
@@ -124,35 +130,45 @@ function template_preprocess_rate_template_number_up_down(&$variables) {
   if ($variables['use_ajax']) {
     $up_class .= ' use-ajax';
   }
-  $up_item = Link::fromTextAndUrl(
-    'Up',
-    Url::fromRoute('rate.vote', [
-      'entity_type_id' => $variables['entity_type_id'],
-      'vote_type_id' => 'up',
-      'entity_id' => $variables['entity_id'],
-      'destination' => drupal_get_destination()['destination'],
-    ], [
-      'attributes' => ['class' => $up_class],
-    ])
-  );
-  $variables['up_button'] = $up_item;
+
+  $variables['up_button'] = [
+    '#markup' => '<div class="' . $up_class . '">' . t('Up') . '</div>',
+  ];
+  if ($variables['can_vote']) {
+    $variables['up_button'] = Link::fromTextAndUrl(
+      'Up',
+      Url::fromRoute('rate.vote', [
+        'entity_type_id' => $variables['entity_type_id'],
+        'vote_type_id' => 'up',
+        'entity_id' => $variables['entity_id'],
+        'destination' => drupal_get_destination()['destination'],
+      ], [
+        'attributes' => ['class' => $up_class],
+      ])
+    );
+  }
 
   $down_class = 'rate-number-up-down-btn-down';
   if ($variables['use_ajax']) {
     $down_class .= ' use-ajax';
   }
-  $down_item = Link::fromTextAndUrl(
-    'Down',
-    Url::fromRoute('rate.vote', [
-      'entity_type_id' => $variables['entity_type_id'],
-      'vote_type_id' => 'down',
-      'entity_id' => $variables['entity_id'],
-      'destination' => drupal_get_destination()['destination'],
-    ], [
-      'attributes' => ['class' => $down_class],
-    ])
-  );
-  $variables['down_button'] = $down_item;
+
+  $variables['down_button'] = [
+    '#markup' => '<div class="' . $down_class . '">' . t('Down') . '</div>',
+  ];
+  if ($variables['can_vote']) {
+    $variables['down_button'] = Link::fromTextAndUrl(
+      'Down',
+      Url::fromRoute('rate.vote', [
+        'entity_type_id' => $variables['entity_type_id'],
+        'vote_type_id' => 'down',
+        'entity_id' => $variables['entity_id'],
+        'destination' => drupal_get_destination()['destination'],
+      ], [
+        'attributes' => ['class' => $down_class],
+      ])
+    );
+  }
 
   $score = $variables['up_votes'] - $variables['down_votes'];
   if ($score > 0) {
@@ -168,8 +184,6 @@ function template_preprocess_rate_template_number_up_down(&$variables) {
   }
   $variables['score'] = $score;
   $variables['score_class'] = $score_class;
-
-  // @Todo add closed and extra info.
 
   $variables['#attached']['library'][] = 'rate/number-up-down';
 }

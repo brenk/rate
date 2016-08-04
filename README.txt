@@ -8,16 +8,17 @@ Implemented
  - Fivestar voting
  - CSS and templates
  - Voting Results tab for nodes
+ - Voting via AJAX
 
 Not implemented yet:
- - AJAX voting
+
  - Emotion voting (do not plan on porting)
  - Configurable Intro, description, already voted text/unlinking
  - Full array of configuration from rate d7
  - Different widget display types
  - Placement on node
- - Full configuration options from D7
  - Voting for comments
+ - rate expiration sub-module
 
 Limitations:
  - Only one voting type per entity (node) type
