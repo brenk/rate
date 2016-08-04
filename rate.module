@@ -193,6 +193,7 @@ function template_preprocess_rate_template_number_up_down(&$variables) {
  */
 function template_preprocess_rate_template_fivestar(&$variables) {
   $stars = [];
+
   // Calculate the score.
   $score = 0;
   $total_votes = 0;
@@ -200,28 +201,41 @@ function template_preprocess_rate_template_fivestar(&$variables) {
     $score += ($variables['star' . $counter . '_votes'] * $counter);
     $total_votes += $variables['star' . $counter . '_votes'];
   }
-  $score = round($score / $total_votes);
+  if ($score > 0 && $total_votes > 0) {
+    $score = round($score / $total_votes);
+  }
 
   // Set up the links.
   for ($counter = 1; $counter < 6; $counter++) {
     if ($counter <= $score) {
       $class = 'rate-fivestar-btn-filled';
-    }
-    else {
+    } else {
       $class = 'rate-fivestar-btn-empty';
     }
     $class .= ' rate-fivestar-' . ($counter + 1);
-    $stars[] = Link::fromTextAndUrl(
-      'Stars ' . $counter,
-      Url::fromRoute('rate.vote', [
-        'entity_type_id' => $variables['entity_type_id'],
-        'vote_type_id' => 'star' . $counter,
-        'entity_id' => $variables['entity_id'],
-        'destination' => drupal_get_destination()['destination'],
-      ], [
-        'attributes' => ['class' => $class],
-      ])
-    );
+
+    if ($variables['use_ajax']) {
+      $class .= ' use-ajax';
+    }
+
+    if ($variables['can_vote']) {
+      $stars[] = Link::fromTextAndUrl(
+        'Stars ' . $counter,
+        Url::fromRoute('rate.vote', [
+          'entity_type_id' => $variables['entity_type_id'],
+          'vote_type_id' => 'star' . $counter,
+          'entity_id' => $variables['entity_id'],
+          'destination' => drupal_get_destination()['destination'],
+        ], [
+          'attributes' => ['class' => $class],
+        ])
+      );
+    }
+    else {
+      $stars[] = [
+        '#markup' => '<div class="' . $class . '">' . t('Star') . '</div>',
+      ];
+    }
   }
 
   $variables['stars'] = [
@@ -236,31 +250,49 @@ function template_preprocess_rate_template_fivestar(&$variables) {
  * Implements hook_preprocess_HOOK() for rate-template-thumbs_up_down.html.twig.
  */
 function template_preprocess_rate_template_thumbs_up_down(&$variables) {
-  $up_item = Link::fromTextAndUrl(
-    'Up',
-    Url::fromRoute('rate.vote', [
-      'entity_type_id' => $variables['entity_type_id'],
-      'vote_type_id' => 'up',
-      'entity_id' => $variables['entity_id'],
-      'destination' => drupal_get_destination()['destination'],
-    ], [
-      'attributes' => ['class' => 'rate-thumbs-up-down-btn-up'],
-    ])
-  );
-  $variables['up_button'] = $up_item;
+  $up_class = 'rate-thumbs-up-down-btn-up';
+  if ($variables['use_ajax']) {
+    $up_class .= ' use-ajax';
+  }
 
-  $down_item = Link::fromTextAndUrl(
-    'Down',
-    Url::fromRoute('rate.vote', [
-      'entity_type_id' => $variables['entity_type_id'],
-      'vote_type_id' => 'down',
-      'entity_id' => $variables['entity_id'],
-      'destination' => drupal_get_destination()['destination'],
-    ], [
-      'attributes' => ['class' => 'rate-thumbs-up-down-btn-down'],
-    ])
-  );
-  $variables['down_button'] = $down_item;
+  $variables['up_button'] = [
+    '#markup' => '<div class="' . $up_class . '">' . t('Up') . '</div>',
+  ];
+  if ($variables['can_vote']) {
+    $variables['up_button'] = Link::fromTextAndUrl(
+      'Up',
+      Url::fromRoute('rate.vote', [
+        'entity_type_id' => $variables['entity_type_id'],
+        'vote_type_id' => 'up',
+        'entity_id' => $variables['entity_id'],
+        'destination' => drupal_get_destination()['destination'],
+      ], [
+        'attributes' => ['class' => $up_class],
+      ])
+    );
+  }
+
+  $down_class = 'rate-thumbs-up-down-btn-down';
+  if ($variables['use_ajax']) {
+    $down_class .= ' use-ajax';
+  }
+
+  $variables['down_button'] = [
+    '#markup' => '<div class="' . $down_class . '">' . t('Down') . '</div>',
+  ];
+  if ($variables['can_vote']) {
+    $variables['down_button'] = Link::fromTextAndUrl(
+      'Down',
+      Url::fromRoute('rate.vote', [
+        'entity_type_id' => $variables['entity_type_id'],
+        'vote_type_id' => 'down',
+        'entity_id' => $variables['entity_id'],
+        'destination' => drupal_get_destination()['destination'],
+      ], [
+        'attributes' => ['class' => $down_class],
+      ])
+    );
+  }
 
   $total_votes = $variables['up_votes'] + $variables['down_votes'];
   $variables['up_percent'] = round(($variables['up_votes'] / $total_votes) * 100);
@@ -272,18 +304,28 @@ function template_preprocess_rate_template_thumbs_up_down(&$variables) {
  * Implements hook_preprocess_HOOK() for rate-template-thumbs_up.html.twig.
  */
 function template_preprocess_rate_template_thumbs_up(&$variables) {
-  $up_item = Link::fromTextAndUrl(
-    'Up',
-    Url::fromRoute('rate.vote', [
-      'entity_type_id' => $variables['entity_type_id'],
-      'vote_type_id' => 'up',
-      'entity_id' => $variables['entity_id'],
-      'destination' => drupal_get_destination()['destination'],
-    ], [
-      'attributes' => ['class' => 'rate-thumbs-up-btn-up'],
-    ])
-  );
-  $variables['up_button'] = $up_item;
+  $up_class = 'rate-thumbs-up-btn-up';
+  if ($variables['use_ajax']) {
+    $up_class .= ' use-ajax';
+  }
+
+  $variables['up_button'] = [
+    '#markup' => '<div class="' . $up_class . '">' . t('Up') . '</div>',
+  ];
+  if ($variables['can_vote']) {
+    $variables['up_button'] = Link::fromTextAndUrl(
+      'Up',
+      Url::fromRoute('rate.vote', [
+        'entity_type_id' => $variables['entity_type_id'],
+        'vote_type_id' => 'up',
+        'entity_id' => $variables['entity_id'],
+        'destination' => drupal_get_destination()['destination'],
+      ], [
+        'attributes' => ['class' => $up_class],
+      ])
+    );
+  }
+
   $variables['#attached']['library'][] = 'rate/thumbs-up';
 }
 
@@ -291,33 +333,50 @@ function template_preprocess_rate_template_thumbs_up(&$variables) {
  * Implements hook_preprocess_HOOK() for rate-template-yes_no.html.twig.
  */
 function template_preprocess_rate_template_yesno(&$variables) {
-  $buttons = [];
+  $yes_class = 'rate-yesno-btn rate-yes-btn';
+  if ($variables['use_ajax']) {
+    $yes_class .= ' use-ajax';
+  }
 
-  $up_item = Link::fromTextAndUrl(
-    'Yes',
-    Url::fromRoute('rate.vote', [
-      'entity_type_id' => $variables['entity_type_id'],
-      'vote_type_id' => 'up',
-      'entity_id' => $variables['entity_id'],
-      'destination' => drupal_get_destination()['destination'],
-    ], [
-      'attributes' => ['class' => 'rate-yesno-btn rate-yes-btn'],
-    ])
-  );
-  $variables['yes_button'] = $up_item;
+  $variables['yes_button'] = [
+    '#markup' => '<div class="' . $yes_class . '">' . t('Yes') . '</div>',
+  ];
 
-  $down_item = Link::fromTextAndUrl(
-    'No',
-    Url::fromRoute('rate.vote', [
-      'entity_type_id' => $variables['entity_type_id'],
-      'vote_type_id' => 'down',
-      'entity_id' => $variables['entity_id'],
-      'destination' => drupal_get_destination()['destination'],
-    ], [
-      'attributes' => ['class' => 'rate-yesno-btn rate-no-btn'],
-    ])
-  );
-  $variables['no_button'] = $down_item;
+  if ($variables['can_vote']) {
+    $variables['yes_button'] = Link::fromTextAndUrl(
+      'Yes',
+      Url::fromRoute('rate.vote', [
+        'entity_type_id' => $variables['entity_type_id'],
+        'vote_type_id' => 'up',
+        'entity_id' => $variables['entity_id'],
+        'destination' => drupal_get_destination()['destination'],
+      ], [
+        'attributes' => ['class' => $yes_class],
+      ])
+    );
+  }
 
+  $no_class = 'rate-yesno-btn rate-no-btn';
+  if ($variables['use_ajax']) {
+    $no_class .= ' use-ajax';
+  }
+
+  $variables['no_button'] = [
+    '#markup' => '<div class="' . $no_class . '">' . t('No') . '</div>',
+  ];
+
+  if ($variables['can_vote']) {
+    $variables['no_button'] = Link::fromTextAndUrl(
+      'No',
+      Url::fromRoute('rate.vote', [
+        'entity_type_id' => $variables['entity_type_id'],
+        'vote_type_id' => 'down',
+        'entity_id' => $variables['entity_id'],
+        'destination' => drupal_get_destination()['destination'],
+      ], [
+        'attributes' => ['class' => $no_class],
+      ])
+    );
+  }
   $variables['#attached']['library'][] = 'rate/yesno';
 }
