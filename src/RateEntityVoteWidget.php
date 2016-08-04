@@ -29,7 +29,7 @@ class RateEntityVoteWidget {
    *
    * @param \Drupal\Core\Entity\EntityInterface $entity
    *   The entity to get votes from.
-   * @param \Drupal\Core\Session\AccountProxy
+   * @param \Drupal\Core\Session\AccountProxy $user
    *   The user who is voting.
    */
   public function __construct(EntityInterface $entity, AccountProxy $user) {

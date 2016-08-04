@@ -209,7 +209,8 @@ function template_preprocess_rate_template_fivestar(&$variables) {
   for ($counter = 1; $counter < 6; $counter++) {
     if ($counter <= $score) {
       $class = 'rate-fivestar-btn-filled';
-    } else {
+    }
+    else {
       $class = 'rate-fivestar-btn-empty';
     }
     $class .= ' rate-fivestar-' . ($counter + 1);
