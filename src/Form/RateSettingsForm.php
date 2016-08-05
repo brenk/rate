@@ -103,20 +103,20 @@ class RateSettingsForm extends ConfigFormBase {
       '#description' => t('If you disable any type here, already existing data will remain untouched.'),
     ];
 
-    foreach (NodeType::loadMultiple() as $type) {
-      $id = 'node_' . $type->id() . '_available';
+    foreach (NodeType::loadMultiple() as $node_type) {
+      $id = 'node_' . $node_type->id() . '_available';
       $form['rate_types_enabled']['vote_types_enabled'][$id] = [
         '#type' => 'checkbox',
-        '#title' => $type->label(),
+        '#title' => $node_type->label(),
         '#default_value' => $config->get($id, 0),
       ];
     }
     if (\Drupal::moduleHandler()->moduleExists('comment')) {
-      foreach (CommentType::loadMultiple() as $type) {
-        $id = 'comment_' . $type->id() . '_available';
+      foreach (CommentType::loadMultiple() as $comment_type) {
+        $id = 'comment_' . $comment_type->id() . '_available';
         $form['rate_types_enabled']['vote_types_enabled'][$id] = [
           '#type' => 'checkbox',
-          '#title' => $type->label(),
+          '#title' => $comment_type->label(),
           '#default_value' => $config->get($id, 0),
         ];
       }

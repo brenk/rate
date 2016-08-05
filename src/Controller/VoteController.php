@@ -9,7 +9,6 @@ use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\rate\RateBotDetector;
 use Drupal\rate\RateEntityVoteWidget;
 use Drupal\votingapi\Entity\Vote;
-use Drupal\node\Entity\Node;
 use Drupal\votingapi\Entity\VoteType;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -37,14 +36,14 @@ class VoteController extends ControllerBase implements ContainerInjectionInterfa
   public function vote($entity_type_id, $vote_type_id, $entity_id, Request $request) {
     $databae = \Drupal::database();
     $user = \Drupal::currentUser();
-
+    $entity = \Drupal::entityTypeManager()->getStorage($entity_type_id)->load($entity_id);
     $bot_detector = new RateBotDetector($databae);
     $is_bot_vote = $bot_detector->checkIsBot();
 
     $config = \Drupal::config('rate.settings');
     $use_ajax = $config->get('use_ajax', FALSE);
 
-    if (!$is_bot_vote && $user->hasPermission('cast rate vote')) {
+    if (!$is_bot_vote && $user->hasPermission('cast rate vote on ' . $entity->bundle())) {
       $vote_storage = \Drupal::entityTypeManager()->getStorage('vote');
       $user_votes = $vote_storage->getUserVotes(
         $user->id(),
@@ -80,8 +79,7 @@ class VoteController extends ControllerBase implements ContainerInjectionInterfa
     // If Request was AJAX and voting on a node, send AJAX response.
     if ($use_ajax && $entity_type_id == 'node') {
       $response = new AjaxResponse();
-      $node = Node::load($entity_id);
-      $rate_totals = new RateEntityVoteWidget($node, $user);
+      $rate_totals = new RateEntityVoteWidget($entity, $user);
       $rate_totals_output = $rate_totals->getEntityVoteTotals();
       $widget_class = $config->get('widget_type', 'number_up_down');
       $widget_class = '.rate-widget-' . str_ireplace('_', '-', $widget_class);

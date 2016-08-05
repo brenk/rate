@@ -55,7 +55,7 @@ class RateEntityVoteWidget {
       $entity_id = $this->entity->id();
       $entity_type_id = $this->entity->getEntityTypeId();
       $use_ajax = $config->get('use_ajax', FALSE);
-      $user_can_vote = $this->user->hasPermission('cast rate vote');
+      $user_can_vote = $this->user->hasPermission('cast rate vote on ' . $this->entity->bundle());
 
       if ($config->get('widget_type') == 'fivestar') {
         $output['votingapi_links'] = [
