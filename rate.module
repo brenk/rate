@@ -9,51 +9,44 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Url;
 use Drupal\Core\Link;
-use Drupal\rate\RateEntityVoteWidget;
+use Drupal\node\Entity\NodeType;
 
-// @Todo: implement has voted.
 // @Todo add closed and extra info.
 
 /**
- * Implements hook_entity_load().
+ * Implements hook_entity_extra_field_info().
  */
-function rate_entity_load(array $entities, $entity_type_id) {
+function rate_entity_extra_field_info() {
   $config = \Drupal::config('rate.settings');
-  $vote_result_storage = \Drupal::entityTypeManager()->getStorage('vote_result');
 
-  foreach ($entities as $entity) {
-    $config_id = $entity->getEntityTypeId() . '_' . $entity->bundle() . '_available';
+  foreach (NodeType::loadMultiple() as $node_type) {
+    $config_id = 'node_' . $node_type->id() . '_available';
     if ($config->get($config_id, FALSE)) {
-      if ($config->get('widget_type') == 'fivestar') {
-        for ($counter = 1; $counter < 6; $counter++) {
-          $star = $vote_result_storage->getEntityResults(
-            $entity_type_id, $entity->id(), 'star' . $counter, 'vote_count'
-          );
-          $entity->{'star' . $counter} = !empty($star) ? current($star)->getValue() : 0;
-        }
-      }
-      else {
-        $up = $vote_result_storage->getEntityResults(
-          $entity_type_id, $entity->id(), 'up', 'vote_count'
-        );
-        $entity->up = !empty($up) ? current($up)->getValue() : 0;
-        $down = $vote_result_storage->getEntityResults(
-          $entity_type_id, $entity->id(), 'down', 'vote_count'
-        );
-        $entity->down = !empty($down) ? current($down)->getValue() : 0;
-      }
+      $extra['node'][$node_type->Id()]['display']['rate_vote_widget'] = array(
+        'label' => t('Rate Vote Widget'),
+        'description' => t('Displays the rate voting widget selected from the settings page.'),
+        'weight' => 100,
+        'visible' => TRUE,
+      );
     }
   }
+
+  return $extra;
 }
 
 /**
- * Implements hook_entity_view().
+ * Implements hook_entity_view_alter().
  */
 function rate_entity_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
-  $current_user = \Drupal::currentUser();
-  $rate_totals = new RateEntityVoteWidget($entity, $current_user);
-  $rate_totals_output = $rate_totals->getEntityVoteTotals();
-  $build = array_merge($build, $rate_totals_output);
+  if ($display->getComponent('rate_vote_widget')) {
+    $vote_widget_service = \Drupal::service('rate.entity.vote_widget');
+    $vote_widget = $vote_widget_service->buildRateVotingWidget(
+      $entity->id(),
+      $entity->getEntityTypeId(),
+      $entity->bundle()
+    );
+    $build = array_merge($build, $vote_widget);
+  }
 }
 
 /**
@@ -67,6 +60,7 @@ function rate_theme($existing, $type, $theme, $path) {
         'up_votes' => 0,
         'use_ajax' => FALSE,
         'can_vote' => FALSE,
+        'has_voted' => FALSE,
         'entity_id' => NULL,
         'entity_type_id' => NULL,
       ],
@@ -78,6 +72,7 @@ function rate_theme($existing, $type, $theme, $path) {
         'down_votes' => 0,
         'use_ajax' => FALSE,
         'can_vote' => FALSE,
+        'has_voted' => FALSE,
         'entity_id' => NULL,
         'entity_type_id' => NULL,
       ],
@@ -89,6 +84,7 @@ function rate_theme($existing, $type, $theme, $path) {
         'down_votes' => 0,
         'use_ajax' => FALSE,
         'can_vote' => FALSE,
+        'has_voted' => FALSE,
         'entity_id' => NULL,
         'entity_type_id' => NULL,
       ],
@@ -103,6 +99,7 @@ function rate_theme($existing, $type, $theme, $path) {
         'star5_votes' => 0,
         'use_ajax' => FALSE,
         'can_vote' => FALSE,
+        'has_voted' => FALSE,
         'entity_id' => NULL,
         'entity_type_id' => NULL,
       ],
@@ -114,6 +111,7 @@ function rate_theme($existing, $type, $theme, $path) {
         'down_votes' => 0,
         'use_ajax' => FALSE,
         'can_vote' => FALSE,
+        'has_voted' => FALSE,
         'entity_id' => NULL,
         'entity_type_id' => NULL,
       ],
@@ -127,14 +125,14 @@ function rate_theme($existing, $type, $theme, $path) {
  */
 function template_preprocess_rate_template_number_up_down(&$variables) {
   $up_class = 'rate-number-up-down-btn-up';
+  $variables['up_button'] = [
+    '#markup' => '<div class="' . $up_class . '">' . t('Up') . '</div>',
+  ];
   if ($variables['use_ajax']) {
     $up_class .= ' use-ajax';
   }
 
-  $variables['up_button'] = [
-    '#markup' => '<div class="' . $up_class . '">' . t('Up') . '</div>',
-  ];
-  if ($variables['can_vote']) {
+  if ($variables['can_vote'] && !$variables['has_voted']) {
     $variables['up_button'] = Link::fromTextAndUrl(
       'Up',
       Url::fromRoute('rate.vote', [
@@ -149,14 +147,14 @@ function template_preprocess_rate_template_number_up_down(&$variables) {
   }
 
   $down_class = 'rate-number-up-down-btn-down';
+  $variables['down_button'] = [
+    '#markup' => '<div class="' . $down_class . '">' . t('Down') . '</div>',
+  ];
   if ($variables['use_ajax']) {
     $down_class .= ' use-ajax';
   }
 
-  $variables['down_button'] = [
-    '#markup' => '<div class="' . $down_class . '">' . t('Down') . '</div>',
-  ];
-  if ($variables['can_vote']) {
+  if ($variables['can_vote'] && !$variables['has_voted']) {
     $variables['down_button'] = Link::fromTextAndUrl(
       'Down',
       Url::fromRoute('rate.vote', [
@@ -185,6 +183,7 @@ function template_preprocess_rate_template_number_up_down(&$variables) {
   $variables['score'] = $score;
   $variables['score_class'] = $score_class;
 
+  $variables['undo'] = _rate_get_undo_link($variables);
   $variables['#attached']['library'][] = 'rate/number-up-down';
 }
 
@@ -215,11 +214,11 @@ function template_preprocess_rate_template_fivestar(&$variables) {
     }
     $class .= ' rate-fivestar-' . ($counter + 1);
 
-    if ($variables['use_ajax']) {
-      $class .= ' use-ajax';
-    }
+    if ($variables['can_vote'] && !$variables['has_voted']) {
+      if ($variables['use_ajax']) {
+        $class .= ' use-ajax';
+      }
 
-    if ($variables['can_vote']) {
       $stars[] = Link::fromTextAndUrl(
         'Stars ' . $counter,
         Url::fromRoute('rate.vote', [
@@ -244,6 +243,7 @@ function template_preprocess_rate_template_fivestar(&$variables) {
     '#items' => $stars,
   ];
 
+  $variables['undo'] = _rate_get_undo_link($variables);
   $variables['#attached']['library'][] = 'rate/fivestar';
 }
 
@@ -252,14 +252,14 @@ function template_preprocess_rate_template_fivestar(&$variables) {
  */
 function template_preprocess_rate_template_thumbs_up_down(&$variables) {
   $up_class = 'rate-thumbs-up-down-btn-up';
+  $variables['up_button'] = [
+    '#markup' => '<div class="' . $up_class . '">' . t('Up') . '</div>',
+  ];
   if ($variables['use_ajax']) {
     $up_class .= ' use-ajax';
   }
 
-  $variables['up_button'] = [
-    '#markup' => '<div class="' . $up_class . '">' . t('Up') . '</div>',
-  ];
-  if ($variables['can_vote']) {
+  if ($variables['can_vote'] && !$variables['has_voted']) {
     $variables['up_button'] = Link::fromTextAndUrl(
       'Up',
       Url::fromRoute('rate.vote', [
@@ -274,14 +274,14 @@ function template_preprocess_rate_template_thumbs_up_down(&$variables) {
   }
 
   $down_class = 'rate-thumbs-up-down-btn-down';
+  $variables['down_button'] = [
+    '#markup' => '<div class="' . $down_class . '">' . t('Down') . '</div>',
+  ];
   if ($variables['use_ajax']) {
     $down_class .= ' use-ajax';
   }
 
-  $variables['down_button'] = [
-    '#markup' => '<div class="' . $down_class . '">' . t('Down') . '</div>',
-  ];
-  if ($variables['can_vote']) {
+  if ($variables['can_vote'] && !$variables['has_voted']) {
     $variables['down_button'] = Link::fromTextAndUrl(
       'Down',
       Url::fromRoute('rate.vote', [
@@ -298,6 +298,7 @@ function template_preprocess_rate_template_thumbs_up_down(&$variables) {
   $total_votes = $variables['up_votes'] + $variables['down_votes'];
   $variables['up_percent'] = round(($variables['up_votes'] / $total_votes) * 100);
   $variables['down_percent'] = round(($variables['down_votes'] / $total_votes) * 100);
+  $variables['undo'] = _rate_get_undo_link($variables);
   $variables['#attached']['library'][] = 'rate/thumbs-up-down';
 }
 
@@ -306,14 +307,14 @@ function template_preprocess_rate_template_thumbs_up_down(&$variables) {
  */
 function template_preprocess_rate_template_thumbs_up(&$variables) {
   $up_class = 'rate-thumbs-up-btn-up';
+  $variables['up_button'] = [
+    '#markup' => '<div class="' . $up_class . '">' . t('Up') . '</div>',
+  ];
   if ($variables['use_ajax']) {
     $up_class .= ' use-ajax';
   }
 
-  $variables['up_button'] = [
-    '#markup' => '<div class="' . $up_class . '">' . t('Up') . '</div>',
-  ];
-  if ($variables['can_vote']) {
+  if ($variables['can_vote'] && !$variables['has_voted']) {
     $variables['up_button'] = Link::fromTextAndUrl(
       'Up',
       Url::fromRoute('rate.vote', [
@@ -327,6 +328,7 @@ function template_preprocess_rate_template_thumbs_up(&$variables) {
     );
   }
 
+  $variables['undo'] = _rate_get_undo_link($variables);
   $variables['#attached']['library'][] = 'rate/thumbs-up';
 }
 
@@ -335,15 +337,14 @@ function template_preprocess_rate_template_thumbs_up(&$variables) {
  */
 function template_preprocess_rate_template_yesno(&$variables) {
   $yes_class = 'rate-yesno-btn rate-yes-btn';
+  $variables['yes_button'] = [
+    '#markup' => '<div class="' . $yes_class . '">' . t('Yes') . '</div>',
+  ];
   if ($variables['use_ajax']) {
     $yes_class .= ' use-ajax';
   }
 
-  $variables['yes_button'] = [
-    '#markup' => '<div class="' . $yes_class . '">' . t('Yes') . '</div>',
-  ];
-
-  if ($variables['can_vote']) {
+  if ($variables['can_vote'] && !$variables['has_voted']) {
     $variables['yes_button'] = Link::fromTextAndUrl(
       'Yes',
       Url::fromRoute('rate.vote', [
@@ -358,15 +359,14 @@ function template_preprocess_rate_template_yesno(&$variables) {
   }
 
   $no_class = 'rate-yesno-btn rate-no-btn';
+  $variables['no_button'] = [
+    '#markup' => '<div class="' . $no_class . '">' . t('No') . '</div>',
+  ];
   if ($variables['use_ajax']) {
     $no_class .= ' use-ajax';
   }
 
-  $variables['no_button'] = [
-    '#markup' => '<div class="' . $no_class . '">' . t('No') . '</div>',
-  ];
-
-  if ($variables['can_vote']) {
+  if ($variables['can_vote'] && !$variables['has_voted']) {
     $variables['no_button'] = Link::fromTextAndUrl(
       'No',
       Url::fromRoute('rate.vote', [
@@ -379,5 +379,30 @@ function template_preprocess_rate_template_yesno(&$variables) {
       ])
     );
   }
+
+  $variables['undo'] = _rate_get_undo_link($variables);
   $variables['#attached']['library'][] = 'rate/yesno';
+}
+
+/**
+ * Helper function to return an undo link.
+ */
+function _rate_get_undo_link($variables) {
+  $class = 'rate-undo';
+  if ($variables['use_ajax']) {
+    $class .= ' use-ajax';
+  }
+  if ($variables['has_voted']) {
+    return Link::fromTextAndUrl(
+      'Undo',
+      Url::fromRoute('rate.undo_vote', [
+        'entity_type_id' => $variables['entity_type_id'],
+        'entity_id' => $variables['entity_id'],
+        'destination' => drupal_get_destination()['destination'],
+      ], [
+        'attributes' => ['class' => $class],
+      ])
+    );
+  }
+  return '';
 }

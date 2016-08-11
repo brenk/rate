@@ -1,6 +1,7 @@
 services:
-  rate.entity_vote_totals:
+  rate.entity.vote_widget:
     class: Drupal\rate\RateEntityVoteWidget
+    arguments: ['@config.factory', '@entity_type.manager', '@current_user', '@plugin.manager.votingapi.resultfunction']
   rate.bot_detector:
     class: Drupal\rate\RateBotDetector
     arguments: ['@database']

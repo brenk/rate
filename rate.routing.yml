@@ -12,6 +12,12 @@ rate.vote:
     _controller: '\Drupal\rate\Controller\VoteController::vote'
   requirements:
     _permission: 'access content'
+rate.undo_vote:
+  path: '/rate/undo/{entity_type_id}/{entity_id}'
+  defaults:
+    _controller: 'Drupal\rate\Controller\VoteController::undoVote'
+  requirements:
+    _permission: 'access content'
 rate.results_page:
   path: '/node/{node}/rating'
   defaults:

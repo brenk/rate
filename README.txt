@@ -9,16 +9,16 @@ Implemented
  - CSS and templates
  - Voting Results tab for nodes
  - Voting via AJAX
+ - Undo vote
+ - Voting on comments
 
 Not implemented yet:
 
  - Emotion voting (do not plan on porting)
- - Configurable Intro, description, already voted text/unlinking
+ - Configurable Intro, description & already voted text
  - Full array of configuration from rate d7
  - Different widget display types
- - Placement on node
- - Voting for comments
- - rate expiration sub-module
+ - expiration sub-module
 
 Limitations:
  - Only one voting type per entity (node) type
@@ -26,7 +26,7 @@ Limitations:
 
 Known Issues:
  - Anonymous voter being treated as a singular entity; can't vote more than once
- - Recurrsion warning for results totals
+
 
 Readme from D7:
 

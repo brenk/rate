@@ -23,6 +23,9 @@
       <div class="percent">{{ down_percent }}%</div>
     </li>
   </ul>
+  {% if undo %}
+    <div class="rate-undo-vote">{{ undo }}</div>
+  {% endif %}
   {% if info %}
     <div class="rate-info">{{ info }}</div>
   {% endif %}

@@ -14,6 +14,9 @@
 #}
 <div class="rate-widget-fivestar">
   {{ stars }}
+  {% if undo %}
+    <div class="rate-undo-vote">{{ undo }}</div>
+  {% endif %}
   {% if info %}
     <div class="rate-info">{{ info }}</div>
   {% endif %}

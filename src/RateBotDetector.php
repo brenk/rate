@@ -2,13 +2,15 @@
 
 namespace Drupal\rate;
 
-use GuzzleHttp\Exception\RequestException;
 use Drupal\Core\Database\Connection;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
+use GuzzleHttp\Exception\RequestException;
 
 /**
- * The rate.entity_vote_totals service.
+ * The rate.bot_detector service.
  */
 class RateBotDetector {
+  use StringTranslationTrait;
 
   /**
    * Client IP.
@@ -41,7 +43,7 @@ class RateBotDetector {
   /**
    * RateBotDetector constructor.
    *
-   * @param Connection $database
+   * @param Drupal\Core\Database\Connection $database
    *   Database connection object.
    */
   public function __construct(Connection $database) {
@@ -140,7 +142,7 @@ class RateBotDetector {
         }
       }
       catch (RequestException $e) {
-        drupal_set_message(t('An error occurred contacting BotScout.'), 'warning');
+        drupal_set_message($this->t('An error occurred contacting BotScout.'), 'warning');
         watchdog_exception('rate', $e);
       }
     }
