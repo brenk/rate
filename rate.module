@@ -9,7 +9,6 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Url;
 use Drupal\Core\Link;
-use Drupal\node\Entity\NodeType;
 
 // @Todo add closed and extra info.
 
@@ -17,18 +16,16 @@ use Drupal\node\Entity\NodeType;
  * Implements hook_entity_extra_field_info().
  */
 function rate_entity_extra_field_info() {
+  $extra = [];
   $config = \Drupal::config('rate.settings');
-
-  foreach (NodeType::loadMultiple() as $node_type) {
-    $config_id = 'node_' . $node_type->id() . '_available';
-    if ($config->get($config_id, FALSE)) {
-      $extra['node'][$node_type->Id()]['display']['rate_vote_widget'] = array(
-        'label' => t('Rate Vote Widget'),
-        'description' => t('Displays the rate voting widget selected from the settings page.'),
-        'weight' => 100,
-        'visible' => TRUE,
-      );
-    }
+  $enabled_bundles = $config->get('enabled_bundles');
+  foreach ($enabled_bundles as $bundle_id => $entity_type_id) {
+    $extra[$entity_type_id][$bundle_id]['display']['rate_vote_widget'] = array(
+      'label' => t('Rate Vote Widget'),
+      'description' => t('Displays the rate voting widget selected from the settings page.'),
+      'weight' => 100,
+      'visible' => TRUE,
+    );
   }
 
   return $extra;
@@ -183,6 +180,7 @@ function template_preprocess_rate_template_number_up_down(&$variables) {
   $variables['score'] = $score;
   $variables['score_class'] = $score_class;
 
+  $variables['identifier'] = _rate_get_div_id($variables);
   $variables['undo'] = _rate_get_undo_link($variables);
   $variables['#attached']['library'][] = 'rate/number-up-down';
 }
@@ -243,6 +241,7 @@ function template_preprocess_rate_template_fivestar(&$variables) {
     '#items' => $stars,
   ];
 
+  $variables['identifier'] = _rate_get_div_id($variables);
   $variables['undo'] = _rate_get_undo_link($variables);
   $variables['#attached']['library'][] = 'rate/fivestar';
 }
@@ -298,6 +297,8 @@ function template_preprocess_rate_template_thumbs_up_down(&$variables) {
   $total_votes = $variables['up_votes'] + $variables['down_votes'];
   $variables['up_percent'] = round(($variables['up_votes'] / $total_votes) * 100);
   $variables['down_percent'] = round(($variables['down_votes'] / $total_votes) * 100);
+
+  $variables['identifier'] = _rate_get_div_id($variables);
   $variables['undo'] = _rate_get_undo_link($variables);
   $variables['#attached']['library'][] = 'rate/thumbs-up-down';
 }
@@ -328,6 +329,7 @@ function template_preprocess_rate_template_thumbs_up(&$variables) {
     );
   }
 
+  $variables['identifier'] = _rate_get_div_id($variables);
   $variables['undo'] = _rate_get_undo_link($variables);
   $variables['#attached']['library'][] = 'rate/thumbs-up';
 }
@@ -380,8 +382,16 @@ function template_preprocess_rate_template_yesno(&$variables) {
     );
   }
 
+  $variables['identifier'] = _rate_get_div_id($variables);
   $variables['undo'] = _rate_get_undo_link($variables);
   $variables['#attached']['library'][] = 'rate/yesno';
+}
+
+/**
+ * Helper function to identifier for templates.
+ */
+function _rate_get_div_id($variables) {
+  return 'rate-' . $variables['entity_type_id'] . '-' . $variables['entity_id'];
 }
 
 /**

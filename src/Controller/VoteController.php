@@ -163,7 +163,7 @@ class VoteController extends ControllerBase implements ContainerInjectionInterfa
         $vote->save();
         $invalidate_tags = [
           $entity_type_id . ':' . $entity_id,
-          'vote:' . $entity_type_id . ':' . $entity_id,
+          'vote:' . $entity->bundle() . ':' . $entity_id,
         ];
         Cache::invalidateTags($invalidate_tags);
 
@@ -185,8 +185,7 @@ class VoteController extends ControllerBase implements ContainerInjectionInterfa
     if ($use_ajax && $entity_type_id == 'node') {
       $response = new AjaxResponse();
       $vote_widget = $this->voteWidget->buildRateVotingWidget($entity_id, $entity_type_id, $entity->bundle());
-      $widget_class = $this->config->get('widget_type', 'number_up_down');
-      $widget_class = '.rate-widget-' . str_ireplace('_', '-', $widget_class);
+      $widget_class = '#rate-' . $entity_type_id . '-' . $entity_id;
       $html = $this->renderer->render($vote_widget);
       $response->addCommand(new ReplaceCommand($widget_class, $html));
       return $response;
@@ -231,7 +230,7 @@ class VoteController extends ControllerBase implements ContainerInjectionInterfa
         $vote->delete();
         $invalidate_tags = [
           $entity_type_id . ':' . $entity_id,
-          'vote:' . $entity_type_id . ':' . $entity_id,
+          'vote:' . $entity->bundle() . ':' . $entity_id,
         ];
         Cache::invalidateTags($invalidate_tags);
         if (!$use_ajax) {
@@ -250,8 +249,7 @@ class VoteController extends ControllerBase implements ContainerInjectionInterfa
     if ($use_ajax && $entity_type_id == 'node') {
       $response = new AjaxResponse();
       $vote_widget = $this->voteWidget->buildRateVotingWidget($entity_id, $entity_type_id, $entity->bundle());
-      $widget_class = $this->config->get('widget_type', 'number_up_down');
-      $widget_class = '.rate-widget-' . str_ireplace('_', '-', $widget_class);
+      $widget_class = '#rate-' . $entity_type_id . '-' . $entity_id;
       $html = $this->renderer->render($vote_widget);
       $response->addCommand(new ReplaceCommand($widget_class, $html));
       return $response;

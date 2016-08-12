@@ -4,8 +4,6 @@ namespace Drupal\rate\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\comment\Entity\CommentType;
-use Drupal\node\Entity\NodeType;
 
 /**
  * Configure rate settings for the site.
@@ -24,6 +22,26 @@ class RateSettingsForm extends ConfigFormBase {
    */
   protected function getEditableConfigNames() {
     return ['rate.settings'];
+  }
+
+  /**
+   * Get a list of acceptable entity types.
+   *
+   * @return array
+   *   Returns an array of allowed entity types for voting.
+   */
+  protected function getAllowedTypes() {
+    // @Todo: make these configurable.
+    return [
+      'block',
+      'block_content_type',
+      'comment_type',
+      'contact_form',
+      'node_type',
+      'search_page',
+      'taxonomy_vocabulary',
+      'view',
+    ];
   }
 
   /**
@@ -96,29 +114,30 @@ class RateSettingsForm extends ConfigFormBase {
     ];
 
     $form['rate_types_enabled'] = [
-      '#type' => 'fieldset',
-      '#collapsible' => TRUE,
-      '#collapsed' => FALSE,
+      '#type' => 'details',
+      '#open' => TRUE,
       '#title' => t('Entity types with Rate widgets enabled:'),
       '#description' => t('If you disable any type here, already existing data will remain untouched.'),
     ];
 
-    foreach (NodeType::loadMultiple() as $node_type) {
-      $id = 'node_' . $node_type->id() . '_available';
-      $form['rate_types_enabled']['vote_types_enabled'][$id] = [
-        '#type' => 'checkbox',
-        '#title' => $node_type->label(),
-        '#default_value' => $config->get($id, 0),
-      ];
-    }
-    if (\Drupal::moduleHandler()->moduleExists('comment')) {
-      foreach (CommentType::loadMultiple() as $comment_type) {
-        $id = 'comment_' . $comment_type->id() . '_available';
-        $form['rate_types_enabled']['vote_types_enabled'][$id] = [
-          '#type' => 'checkbox',
-          '#title' => $comment_type->label(),
-          '#default_value' => $config->get($id, 0),
+    $entity_types = \Drupal::entityTypeManager()->getDefinitions();
+    $enabled_bundles = $config->get('enabled_bundles');
+    foreach ($entity_types as $entity_type_id => $entity_type) {
+      $bundles = \Drupal::entityTypeManager()->getStorage($entity_type_id)->loadMultiple();
+      if (!empty($bundles) && in_array($entity_type_id, $this->getAllowedTypes())) {
+        $form['rate_types_enabled'][$entity_type_id . '_enabled'] = [
+          '#type' => 'details',
+          '#open' => FALSE,
+          '#title' => $entity_type->getLabel(),
         ];
+        foreach ($bundles as $bundle) {
+          $default_value = (isset($enabled_bundles[$bundle->id()])) ? 1 : 0;
+          $form['rate_types_enabled'][$entity_type_id . '_enabled'][$bundle->id()] = [
+            '#type' => 'checkbox',
+            '#title' => $bundle->label(),
+            '#default_value' => $default_value,
+          ];
+        }
       }
     }
 
@@ -163,17 +182,17 @@ class RateSettingsForm extends ConfigFormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $config = $this->config('rate.settings');
 
-    foreach (NodeType::loadMultiple() as $type) {
-      $id = 'node_' . $type->id() . '_available';
-      $config->set($id, $form_state->getValue($id))->save();
-    }
-
-    if (\Drupal::moduleHandler()->moduleExists('comment')) {
-      foreach (CommentType::loadMultiple() as $type) {
-        $id = 'comment_' . $type->id() . '_available';
-        $config->set($id, $form_state->getValue($id))->save();
+    $enabled_bundles = [];
+    $entity_types = \Drupal::entityTypeManager()->getDefinitions();
+    foreach ($entity_types as $entity_type_id => $entity_type) {
+      $bundles = \Drupal::entityTypeManager()->getStorage($entity_type_id)->loadMultiple();
+      foreach ($bundles as $bundle) {
+        if ($form_state->getValue($bundle->id())) {
+          $enabled_bundles[$bundle->id()] = $entity_type->getBundleOf();
+        }
       }
     }
+    $config->set('enabled_bundles', $enabled_bundles);
 
     $config->set('widget_type', $form_state->getValue('widget_type'))
       ->set('bot_minute_threshold', $form_state->getValue('bot_minute_threshold'))

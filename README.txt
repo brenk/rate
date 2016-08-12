@@ -10,7 +10,7 @@ Implemented
  - Voting Results tab for nodes
  - Voting via AJAX
  - Undo vote
- - Voting on comments
+ - Voting on comments and other entity types (not all have tested)
 
 Not implemented yet:
 
@@ -19,10 +19,11 @@ Not implemented yet:
  - Full array of configuration from rate d7
  - Different widget display types
  - expiration sub-module
+ - Migration from D7 version
 
 Limitations:
  - Only one voting type per entity (node) type
- - No migration if you want to switch from one widget type to another after
+ - No migration for switching from one widget type to another
 
 Known Issues:
  - Anonymous voter being treated as a singular entity; can't vote more than once

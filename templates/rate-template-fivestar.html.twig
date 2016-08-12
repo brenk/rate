@@ -4,15 +4,16 @@
  * Default theme implementation for fivestart voting display.
  *
 * Available variables:
- * - attributes: attributes for enveloping div element.
+ * - identifier: Outer div ID for AJAX purposes.
  * - stars: The images/text to display for voting.
+ * - undo: Link to undo placed vote.
  * - info: Optional brief text to present with voting widgets.
  * - description: Optional longer description to present with voting widgets.
  *
  * @ingroup themeable
  */
 #}
-<div class="rate-widget-fivestar">
+<div id={{ identifier }} class="rate-widget-fivestar">
   {{ stars }}
   {% if undo %}
     <div class="rate-undo-vote">{{ undo }}</div>

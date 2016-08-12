@@ -4,16 +4,19 @@
  * Default theme implementation for up/down voting display.
  *
  * Available variables:
- * - up_button: button to vote up.
- * - down_button: button to vote down.
- * - score_class: extra class to distinguish score level.
- * - info: short text to display.
- * - description: longer descriptive info to display.
+ * - identifier: Outer div ID for AJAX purposes.
+ * - up_button: Button to vote up.
+ * - down_button: Button to vote down.
+ * - score_class: Extra class to distinguish score level.
+ * - score: Number of up votes.
+ * - undo: Link to undo placed vote.
+ * - info: Short text to display.
+ * - description: Longer descriptive info to display.
  *
  * @ingroup themeable
  */
 #}
-<div class="rate-widget-number-up-down">
+<div id={{ identifier }} class="rate-widget-number-up-down">
   {{ up_button }}
   <div class="rate-number-up-down-rating {{ score_class }}">
     {{ score }}

@@ -31,7 +31,7 @@ class RateBotDetector {
    *
    * @var \Drupal\Core\Config\Config
    */
-  protected $rate_settings;
+  protected $config;
 
   /**
    * Database connection object.
@@ -43,13 +43,13 @@ class RateBotDetector {
   /**
    * RateBotDetector constructor.
    *
-   * @param Drupal\Core\Database\Connection $database
+   * @param \Drupal\Core\Database\Connection $database
    *   Database connection object.
    */
   public function __construct(Connection $database) {
     $this->ip = \Drupal::request()->getClientIp();
     $this->agent = $_SERVER['HTTP_USER_AGENT'];
-    $this->rate_settings = \Drupal::config('rate.settings');
+    $this->config = \Drupal::config('rate.settings');
     $this->database = $database;
   }
 
@@ -126,7 +126,7 @@ class RateBotDetector {
    *   True if botscout returns a positive; false otherwise.
    */
   protected function checkBotscout() {
-    $key = $this->rate_settings->get('botscout_key');
+    $key = $this->config->get('botscout_key');
 
     if ($key) {
       $uri = "http://botscout.com/test/?ip=$this->ip&key=$key";
@@ -177,14 +177,14 @@ class RateBotDetector {
       return TRUE;
     }
 
-    $threshold = $this->rate_settings->get('bot_minute_threshold');
+    $threshold = $this->config->get('bot_minute_threshold');
 
     if ($threshold && ($this->checkThreshold(60) > $threshold)) {
       $this->registerBot();
       return TRUE;
     }
 
-    $threshold = $this->rate_settings->get('bot_hour_threshold');
+    $threshold = $this->config->get('bot_hour_threshold');
 
     // Always count, even if threshold is disabled. This is to determine if we
     // can skip the BotScout check.

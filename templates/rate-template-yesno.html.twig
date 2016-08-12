@@ -4,15 +4,19 @@
  * Default theme implementation for yes/no voting display.
  *
  * Available variables:
- * - attributes: attributes for enveloping div element.
- * - buttons: The images/text to display for voting.
+ * - identifier: Outer div ID for AJAX purposes.
+ * - yes_button: Up/yes text/image for up vote.
+ * - up_votes: Number of up/yes votes.
+ * - no_button: Down/no text/image for down vote.
+ * - down_votes: Number of down/no votes.
+ * - undo: Link to undo placed vote.
  * - info: Optional brief text to present with voting widgets.
  * - description: Optional longer description to present with voting widgets.
  *
  * @ingroup themeable
  */
 #}
-<div class="rate-widget-yesno">
+<div id={{ identifier }} class="rate-widget-yesno">
   <div class="item-list">
     <ul>
       <li class="rate-yes-up">

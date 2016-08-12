@@ -5,8 +5,7 @@ namespace Drupal\rate;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\node\Entity\NodeType;
-use Drupal\comment\Entity\CommentType;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -25,13 +24,21 @@ class RatePermissions implements ContainerInjectionInterface {
   protected $config;
 
   /**
+   * The entity type manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
    * Constructs Permissions object.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The config factory.
    */
-  public function __construct(ConfigFactoryInterface $config_factory) {
+  public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager) {
     $this->config = $config_factory->get('rate.settings');
+    $this->entityTypeManager = $entity_type_manager;
   }
 
   /**
@@ -39,7 +46,8 @@ class RatePermissions implements ContainerInjectionInterface {
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('config.factory')
+      $container->get('config.factory'),
+      $container->get('entity_type.manager')
     );
   }
 
@@ -51,24 +59,15 @@ class RatePermissions implements ContainerInjectionInterface {
    */
   public function permissions() {
     $permissions = [];
-    foreach (NodeType::loadMultiple() as $node_type) {
-      $id = 'node_' . $node_type->id() . '_available';
-      if (!empty($this->config->get($id))) {
-        $permissions['cast rate vote on ' . $node_type->id()] = [
-          'title' => $this->t('Enable voting on node of type %node', array('%node' => $node_type->label())),
-        ];
-      }
-    }
-
-    if (\Drupal::moduleHandler()->moduleExists('comment')) {
-      foreach (CommentType::loadMultiple() as $comment_type) {
-        $id = 'comment_' . $comment_type->id() . '_available';
-        if (!empty($this->config->get($id))) {
-          $permissions['cast rate vote on ' . $comment_type->id()] = [
-            'title' => $this->t('Enable voting on node of type %comment', array('%comment' => $comment_type->label())),
-          ];
-        }
-      }
+    $enabled_bundles = $this->config->get('enabled_bundles');
+    foreach ($enabled_bundles as $bundle_id => $enabled) {
+      $permissions['cast rate vote on ' . $bundle_id] = [
+        'title' => $this->t('Can vote on :bundle',
+          [
+            ':bundle' => $bundle_id,
+          ]
+        ),
+      ];
     }
 
     return $permissions;

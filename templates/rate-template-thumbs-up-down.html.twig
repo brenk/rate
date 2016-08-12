@@ -4,15 +4,19 @@
  * Default theme implementation for thumbs up/down voting display.
  *
  * Available variables:
- * - title: Title text.
- * - buttons: The images/text to display for voting.
+ * - identifier: Outer div ID for AJAX purposes.
+ * - up_button: Up text/image for up vote.
+ * - up_percent: Percentage of up votes.
+ * - down_button: Up text/image for down vote.
+ * - down_percent: Percentage of down votes.
+ * - undo: Link to undo placed vote.
  * - info: Optional brief text to present with voting widgets.
  * - description: Optional longer description to present with voting widgets.
  *
  * @ingroup themeable
  */
 #}
-<div class="rate-widget-thumbs-up-down">
+<div id={{ identifier }} class="rate-widget-thumbs-up-down">
   <ul>
     <li class="thumb-up">
       {{ up_button }}

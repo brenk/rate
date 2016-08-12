@@ -81,8 +81,9 @@ class RateEntityVoteWidget {
 
     $widget_type = $this->config->get('widget_type', 'number_up_down');
     $rate_theme = 'rate_template_' . $widget_type;
+    $enabled_bundles = $this->config->get('enabled_bundles', FALSE);
 
-    if ($this->config->get($config_id, FALSE)) {
+    if (isset($enabled_bundles[$bundle])) {
       // Set variables.
       $use_ajax = $this->config->get('use_ajax', FALSE);
       $vote_storage = $this->entityTypeManager->getStorage('vote');
@@ -118,7 +119,7 @@ class RateEntityVoteWidget {
           '#entity_id' => $entity_id,
           '#entity_type_id' => $entity_type_id,
           '#attributes' => ['class' => ['links', 'inline']],
-          '#cache' => ['tags' => ['vote:' . $entity_type_id . ':' . $entity_id]],
+          '#cache' => ['tags' => ['vote:' . $bundle . ':' . $entity_id]],
         ];
       }
       else {
@@ -132,7 +133,7 @@ class RateEntityVoteWidget {
           '#entity_id' => $entity_id,
           '#entity_type_id' => $entity_type_id,
           '#attributes' => ['class' => ['links', 'inline']],
-          '#cache' => ['tags' => ['vote:' . $entity_type_id . ':' . $entity_id]],
+          '#cache' => ['tags' => ['vote:' . $bundle . ':' . $entity_id]],
         ];
       }
     }
