@@ -4,6 +4,8 @@ namespace Drupal\rate;
 
 use Drupal\Core\Database\Connection;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Symfony\Component\HttpFoundation\RequestStack;
+use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 
 /**
@@ -27,9 +29,9 @@ class RateBotDetector {
   protected $agent;
 
   /**
-   * Rate settings object.
+   * The config factory wrapper to fetch settings.
    *
-   * @var \Drupal\Core\Config\Config
+   * @var \Drupal\Core\Config\ConfigFactoryInterface
    */
   protected $config;
 
@@ -41,16 +43,35 @@ class RateBotDetector {
   protected $database;
 
   /**
+   * The Http Client object.
+   *
+   * @var \GuzzleHttp\Client
+   */
+  protected $httpClient;
+
+  /**
+   * The request stack.
+   *
+   * @var \Symfony\Component\HttpFoundation\RequestStack
+   */
+  protected $requestStack;
+
+  /**
    * RateBotDetector constructor.
    *
-   * @param \Drupal\Core\Database\Connection $database
+   * @param ConfigFactoryInterface $config_factory
+   *   The configuration factory.
+   * @param Connection $database
+   *   Database connection object.
+   * @param RequestStack $request_stack
    *   Database connection object.
    */
-  public function __construct(Connection $database) {
-    $this->ip = \Drupal::request()->getClientIp();
-    $this->agent = $_SERVER['HTTP_USER_AGENT'];
-    $this->config = \Drupal::config('rate.settings');
+  public function __construct(ConfigFactoryInterface $config_factory, Connection $database, Client $http_client, RequestStack $request_stack) {
+    $this->config = $config_factory->get('rate.settings');
     $this->database = $database;
+    $this->httpClient = $http_client;
+    $this->ip = $request_stack->getCurrentRequest()->getClientIp();
+    $this->agent = $request_stack->getCurrentRequest()->headers->get('User-Agent');
   }
 
   /**
@@ -129,10 +150,11 @@ class RateBotDetector {
     $key = $this->config->get('botscout_key');
 
     if ($key) {
+      // @Todo: move to config.
       $uri = "http://botscout.com/test/?ip=$this->ip&key=$key";
 
       try {
-        $response = \Drupal::httpClient()->get($uri, array('headers' => array('Accept' => 'text/plain')));
+        $response = $this->httpClient->get($uri, array('headers' => array('Accept' => 'text/plain')));
         $data = (string) $response->getBody();
         $status_code = $response->getStatusCode();
         if (!empty($data) && $status_code == 200) {
