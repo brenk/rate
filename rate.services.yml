@@ -4,4 +4,4 @@ services:
     arguments: ['@config.factory', '@entity_type.manager', '@current_user', '@plugin.manager.votingapi.resultfunction']
   rate.bot_detector:
     class: Drupal\rate\RateBotDetector
-    arguments: ['@database']
+    arguments: ['@config.factory', '@database', '@http_client', '@request_stack']
